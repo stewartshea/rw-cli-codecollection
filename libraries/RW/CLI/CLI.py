@@ -5,6 +5,7 @@ Scope: Global
 """
 import re, logging, json, jmespath, os
 from datetime import datetime
+from typing import Dict,List
 from robot.libraries.BuiltIn import BuiltIn
 
 from RW import platform
@@ -188,12 +189,10 @@ def resolve_path_to_robot():
 
     raise FileNotFoundError("Could not find the robot file in any known locations.")
 
-
-
 def run_bash_file(
     bash_file: str,
     target_service: platform.Service = None,
-    env: dict = None,
+    env: Dict[str, str] = None,
     include_in_history: bool = True,
     cmd_override: str = "",
     timeout_seconds: int = 60,
@@ -207,82 +206,276 @@ def run_bash_file(
         env (dict, optional): a mapping of environment variables to set for the environment. Defaults to None.
         include_in_history (bool, optional): whether to include in the shell history or not. Defaults to True.
         cmd_override (str, optional): the entrypoint command to use, similar to a dockerfile. Defaults to "./<bash_file" internally.
+        timeout_seconds (int, optional): the timeout for the command execution. Defaults to 60 seconds.
 
     Returns:
         platform.ShellServiceResponse: the structured response from running the file.
     """
-    # Check if the file exists in the current working directory
-    if os.path.exists(bash_file):
-        logger.info(f"File '{bash_file}' found in the current working directory.")
-    else:
-        cwd = os.getcwd()
-        rw_path_to_robot = resolve_path_to_robot()
-        ## Users will expect to run the command from within the current working directory
-        ## Here we will rewrite the path so that it executes properly from the cwd
-        if rw_path_to_robot:
-            # Split the path at the patterns you provided and join with the new prefix
-            for pattern in ["sli.robot", "runbook.robot"]:
-                if pattern in rw_path_to_robot:
-                    path, _ = rw_path_to_robot.split(pattern)
-                    # if cwd == runwhen_home:
-                    #     new_path = path
-                    # else:
-                    #     # This for backwards compatibility for older images
-                    #     # that have /collection at the root 
-                    #     new_path = os.path.join("/collection", path)
-                    # # Modify the bash_file to point to the new directory
-                    local_bash_file = f"./{bash_file}"
-                    bash_file = os.path.join(path, bash_file)
-                    if os.path.exists(bash_file):
-                        logger.info(
-                            f"File '{bash_file}' found at derived path: {path}."
-                        )
-                        if cmd_override:
-                            cmd_override = cmd_override.replace(
-                                f"{local_bash_file}", f"{bash_file}"
-                            )
-                        else:
-                            cmd_override = f"{bash_file}"
-                        break
-                    else:
-                        logger.warning(
-                            f"File '{bash_file}' not found at derived path: {path}."
-                        )
+    try:
+        # Check if the file exists in the current working directory
+        if os.path.exists(bash_file):
+            logger.info(f"File '{bash_file}' found in the current working directory.")
         else:
-            logger.warning(
-                f"Current directory is '{cwd}', but 'RW_PATH_TO_ROBOT' is not set."
-            )
-    if not cmd_override:
-        cmd_override = f"./{bash_file}"
-    logger.info(f"Received kwargs: {kwargs}")
-    request_secrets = _create_secrets_from_kwargs(**kwargs)
-    file_contents: str = ""
-    with open(f"{bash_file}", "r") as fh:
-        file_contents = fh.read()
-    logger.info(f"Script file contents:\n\n{file_contents}")
-    rsp = execute_command(
-        cmd=cmd_override,
-        files={f"{bash_file}": file_contents},
-        service=target_service,
-        request_secrets=request_secrets,
-        env=env,
-        timeout_seconds=timeout_seconds,
-    )
-    if include_in_history:
-        SHELL_HISTORY.append(file_contents)
-    logger.info(f"shell stdout: {rsp.stdout}")
-    logger.info(f"shell stderr: {rsp.stderr}")
-    logger.info(f"shell status: {rsp.status}")
-    logger.info(f"shell returncode: {rsp.returncode}")
-    logger.info(f"shell rsp: {rsp}")
-    return rsp
+            cwd = os.getcwd()
+            rw_path_to_robot = resolve_path_to_robot()
+            # Users will expect to run the command from within the current working directory
+            # Here we will rewrite the path so that it executes properly from the cwd
+            if rw_path_to_robot:
+                # Split the path at the patterns you provided and join with the new prefix
+                for pattern in ["sli.robot", "runbook.robot"]:
+                    if pattern in rw_path_to_robot:
+                        path, _ = rw_path_to_robot.split(pattern)
+                        local_bash_file = f"./{bash_file}"
+                        bash_file = os.path.join(path, bash_file)
+                        if os.path.exists(bash_file):
+                            logger.info(
+                                f"File '{bash_file}' found at derived path: {path}."
+                            )
+                            if cmd_override:
+                                cmd_override = cmd_override.replace(
+                                    f"{local_bash_file}", f"{bash_file}"
+                                )
+                            else:
+                                cmd_override = f"{bash_file}"
+                            break
+                        else:
+                            logger.warning(
+                                f"File '{bash_file}' not found at derived path: {path}."
+                            )
+            else:
+                logger.warning(
+                    f"Current directory is '{cwd}', but 'RW_PATH_TO_ROBOT' is not set."
+                )
+        if not cmd_override:
+            cmd_override = f"./{bash_file}"
+        logger.info(f"Received kwargs: {kwargs}")
+        request_secrets = _create_secrets_from_kwargs(**kwargs)
+        file_contents: str = ""
+        with open(f"{bash_file}", "r") as fh:
+            file_contents = fh.read()
+        logger.info(f"Script file contents:\n\n{file_contents}")
+        rsp = execute_command(
+            cmd=cmd_override,
+            files={f"{bash_file}": file_contents},
+            service=target_service,
+            request_secrets=request_secrets,
+            env=env,
+            timeout_seconds=timeout_seconds,
+        )
+        if include_in_history:
+            SHELL_HISTORY.append(file_contents)
+        logger.info(f"shell stdout: {rsp.stdout}")
+        logger.info(f"shell stderr: {rsp.stderr}")
+        logger.info(f"shell status: {rsp.status}")
+        logger.info(f"shell returncode: {rsp.returncode}")
+        logger.info(f"shell rsp: {rsp}")
+        
+        # Raise an exception if the command failed
+        if rsp.returncode != 0:
+            raise RuntimeError(f"Script execution failed with return code {rsp.returncode}: {rsp.stderr}")
+
+        return rsp
+    except Exception as e:
+        logger.error(f"Error running bash file: {str(e)}")
+        raise
 
 
+# def run_bash_file(
+#     bash_file: str,
+#     target_service: platform.Service = None,
+#     env: dict = None,
+#     include_in_history: bool = True,
+#     cmd_override: str = "",
+#     timeout_seconds: int = 60,
+#     **kwargs,
+# ) -> platform.ShellServiceResponse:
+#     """Runs a bash file from the local file system or remotely on a shellservice.
+
+#     Args:
+#         bash_file (str): the name of the bashfile to run
+#         target_service (platform.Service, optional): the shellservice to use if provided. Defaults to None.
+#         env (dict, optional): a mapping of environment variables to set for the environment. Defaults to None.
+#         include_in_history (bool, optional): whether to include in the shell history or not. Defaults to True.
+#         cmd_override (str, optional): the entrypoint command to use, similar to a dockerfile. Defaults to "./<bash_file" internally.
+
+#     Returns:
+#         platform.ShellServiceResponse: the structured response from running the file.
+#     """
+#     # Check if the file exists in the current working directory
+#     if os.path.exists(bash_file):
+#         logger.info(f"File '{bash_file}' found in the current working directory.")
+#     else:
+#         cwd = os.getcwd()
+#         rw_path_to_robot = resolve_path_to_robot()
+#         ## Users will expect to run the command from within the current working directory
+#         ## Here we will rewrite the path so that it executes properly from the cwd
+#         if rw_path_to_robot:
+#             # Split the path at the patterns you provided and join with the new prefix
+#             for pattern in ["sli.robot", "runbook.robot"]:
+#                 if pattern in rw_path_to_robot:
+#                     path, _ = rw_path_to_robot.split(pattern)
+#                     # if cwd == runwhen_home:
+#                     #     new_path = path
+#                     # else:
+#                     #     # This for backwards compatibility for older images
+#                     #     # that have /collection at the root 
+#                     #     new_path = os.path.join("/collection", path)
+#                     # # Modify the bash_file to point to the new directory
+#                     local_bash_file = f"./{bash_file}"
+#                     bash_file = os.path.join(path, bash_file)
+#                     if os.path.exists(bash_file):
+#                         logger.info(
+#                             f"File '{bash_file}' found at derived path: {path}."
+#                         )
+#                         if cmd_override:
+#                             cmd_override = cmd_override.replace(
+#                                 f"{local_bash_file}", f"{bash_file}"
+#                             )
+#                         else:
+#                             cmd_override = f"{bash_file}"
+#                         break
+#                     else:
+#                         logger.warning(
+#                             f"File '{bash_file}' not found at derived path: {path}."
+#                         )
+#         else:
+#             logger.warning(
+#                 f"Current directory is '{cwd}', but 'RW_PATH_TO_ROBOT' is not set."
+#             )
+#     if not cmd_override:
+#         cmd_override = f"./{bash_file}"
+#     logger.info(f"Received kwargs: {kwargs}")
+#     request_secrets = _create_secrets_from_kwargs(**kwargs)
+#     file_contents: str = ""
+#     with open(f"{bash_file}", "r") as fh:
+#         file_contents = fh.read()
+#     logger.info(f"Script file contents:\n\n{file_contents}")
+#     rsp = execute_command(
+#         cmd=cmd_override,
+#         files={f"{bash_file}": file_contents},
+#         service=target_service,
+#         request_secrets=request_secrets,
+#         env=env,
+#         timeout_seconds=timeout_seconds,
+#     )
+#     if include_in_history:
+#         SHELL_HISTORY.append(file_contents)
+#     logger.info(f"shell stdout: {rsp.stdout}")
+#     logger.info(f"shell stderr: {rsp.stderr}")
+#     logger.info(f"shell status: {rsp.status}")
+#     logger.info(f"shell returncode: {rsp.returncode}")
+#     logger.info(f"shell rsp: {rsp}")
+#     return rsp
+
+
+# def run_cli(
+#     cmd: str,
+#     target_service: platform.Service = None,
+#     env: dict = None,
+#     loop_with_items: list = None,
+#     run_in_workload_with_name: str = "",
+#     run_in_workload_with_labels: str = "",
+#     optional_namespace: str = "",
+#     optional_context: str = "",
+#     include_in_history: bool = True,
+#     timeout_seconds: int = 60,
+#     debug: bool = True,
+#     **kwargs,
+# ) -> platform.ShellServiceResponse:
+#     """Executes a string of shell commands either locally or remotely on a shellservice.
+
+#     For passing through secrets securely this can be done by using kwargs with a specific naming convention:
+#     - for files: secret_file__kubeconfig
+#     - for secret strings: secret__mytoken
+
+#     and then to use these within your shell command use the following syntax: $${<secret_name>.key} which will cause the shell command to access where
+#     the secret is stored in the environment it's running in.
+
+#     Args:
+#         cmd (str): the string of shell commands to run, eg: ls -la | grep myfile
+#         target_service (platform.Service, optional): the remote shellservice to run the commands on if provided, otherwise run locally if None. Defaults to None.
+#         env (dict, optional): a mapping of environment variables to set in the environment where the shell commands are run. Defaults to None.
+#         loop_with_items (list, optional): deprecated. Defaults to None.
+#         run_in_workload_with_name (str, optional): deprecated. Defaults to "".
+#         run_in_workload_with_labels (str, optional): deprecated. Defaults to "".
+#         optional_namespace (str, optional): deprecated. Defaults to "".
+#         optional_context (str, optional): deprecated. Defaults to "".
+#         include_in_history (bool, optional): whether or not to include the shell commands in the total history. Defaults to True.
+
+#     Returns:
+#         platform.ShellServiceResponse: the structured response from running the shell commands.
+#     """
+#     global SHELL_HISTORY
+#     looped_results = []
+#     rsp = None
+#     logger.info(
+#         f"Requesting command: {cmd} with service: {target_service} - None indicates run local"
+#     )
+#     if run_in_workload_with_labels or run_in_workload_with_name:
+#         cmd = _create_kubernetes_remote_exec(
+#             cmd=cmd,
+#             target_service=target_service,
+#             env=env,
+#             labels=run_in_workload_with_labels,
+#             workload_name=run_in_workload_with_name,
+#             namespace=optional_namespace,
+#             context=optional_context,
+#             **kwargs,
+#         )
+#     request_secrets: [platform.ShellServiceRequestSecret] = (
+#         [] if len(kwargs.keys()) > 0 else None
+#     )
+#     logger.info(f"Received kwargs: {kwargs}")
+#     request_secrets = _create_secrets_from_kwargs(**kwargs)
+#     if loop_with_items and len(loop_with_items) > 0:
+#         for item in loop_with_items:
+#             cmd = cmd.format(item=item)
+#             iter_rsp = execute_command(
+#                 cmd=cmd,
+#                 service=target_service,
+#                 request_secrets=request_secrets,
+#                 env=env,
+#                 timeout_seconds=timeout_seconds,
+#             )
+#             if include_in_history:
+#                 SHELL_HISTORY.append(cmd)
+#             looped_results.append(iter_rsp.stdout)
+#             # keep track of last rsp codes we got
+#             # TODO: revisit how we aggregate these
+#             rsp = iter_rsp
+#         aggregate_stdout = "\n".join([iter_stdout for iter_stdout in looped_results])
+#         rsp = platform.ShellServiceResponse(
+#             cmd=rsp.cmd,
+#             parsed_cmd=rsp.parsed_cmd,
+#             stdout=aggregate_stdout,
+#             stderr=rsp.stderr,
+#             returncode=rsp.returncode,
+#             status=rsp.status,
+#             body=rsp.body,
+#             errors=rsp.errors,
+#         )
+#     else:
+#         rsp = execute_command(
+#             cmd=cmd,
+#             service=target_service,
+#             request_secrets=request_secrets,
+#             env=env,
+#             timeout_seconds=timeout_seconds,
+#         )
+#         if include_in_history:
+#             SHELL_HISTORY.append(cmd)
+#     if debug:
+#         logger.info(f"shell stdout: {rsp.stdout}")
+#         logger.info(f"shell stderr: {rsp.stderr}")
+#         logger.info(f"shell status: {rsp.status}")
+#         logger.info(f"shell returncode: {rsp.returncode}")
+#         logger.info(f"shell rsp: {rsp}")
+#     return rsp
 def run_cli(
     cmd: str,
     target_service: platform.Service = None,
-    env: dict = None,
-    loop_with_items: list = None,
+    env: Dict[str, str] = None,
+    loop_with_items: List[str] = None,
     run_in_workload_with_name: str = "",
     run_in_workload_with_labels: str = "",
     optional_namespace: str = "",
@@ -311,6 +504,8 @@ def run_cli(
         optional_namespace (str, optional): deprecated. Defaults to "".
         optional_context (str, optional): deprecated. Defaults to "".
         include_in_history (bool, optional): whether or not to include the shell commands in the total history. Defaults to True.
+        timeout_seconds (int, optional): the timeout for the command execution. Defaults to 60 seconds.
+        debug (bool, optional): whether or not to enable debug logging. Defaults to True.
 
     Returns:
         platform.ShellServiceResponse: the structured response from running the shell commands.
@@ -321,26 +516,52 @@ def run_cli(
     logger.info(
         f"Requesting command: {cmd} with service: {target_service} - None indicates run local"
     )
-    if run_in_workload_with_labels or run_in_workload_with_name:
-        cmd = _create_kubernetes_remote_exec(
-            cmd=cmd,
-            target_service=target_service,
-            env=env,
-            labels=run_in_workload_with_labels,
-            workload_name=run_in_workload_with_name,
-            namespace=optional_namespace,
-            context=optional_context,
-            **kwargs,
+    try:
+        if run_in_workload_with_labels or run_in_workload_with_name:
+            cmd = _create_kubernetes_remote_exec(
+                cmd=cmd,
+                target_service=target_service,
+                env=env,
+                labels=run_in_workload_with_labels,
+                workload_name=run_in_workload_with_name,
+                namespace=optional_namespace,
+                context=optional_context,
+                **kwargs,
+            )
+        request_secrets: [platform.ShellServiceRequestSecret] = (
+            [] if len(kwargs.keys()) > 0 else None
         )
-    request_secrets: [platform.ShellServiceRequestSecret] = (
-        [] if len(kwargs.keys()) > 0 else None
-    )
-    logger.info(f"Received kwargs: {kwargs}")
-    request_secrets = _create_secrets_from_kwargs(**kwargs)
-    if loop_with_items and len(loop_with_items) > 0:
-        for item in loop_with_items:
-            cmd = cmd.format(item=item)
-            iter_rsp = execute_command(
+        logger.info(f"Received kwargs: {kwargs}")
+        request_secrets = _create_secrets_from_kwargs(**kwargs)
+        if loop_with_items and len(loop_with_items) > 0:
+            for item in loop_with_items:
+                cmd = cmd.format(item=item)
+                iter_rsp = execute_command(
+                    cmd=cmd,
+                    service=target_service,
+                    request_secrets=request_secrets,
+                    env=env,
+                    timeout_seconds=timeout_seconds,
+                )
+                if include_in_history:
+                    SHELL_HISTORY.append(cmd)
+                looped_results.append(iter_rsp.stdout)
+                # keep track of last rsp codes we got
+                # TODO: revisit how we aggregate these
+                rsp = iter_rsp
+            aggregate_stdout = "\n".join([iter_stdout for iter_stdout in looped_results])
+            rsp = platform.ShellServiceResponse(
+                cmd=rsp.cmd,
+                parsed_cmd=rsp.parsed_cmd,
+                stdout=aggregate_stdout,
+                stderr=rsp.stderr,
+                returncode=rsp.returncode,
+                status=rsp.status,
+                body=rsp.body,
+                errors=rsp.errors,
+            )
+        else:
+            rsp = execute_command(
                 cmd=cmd,
                 service=target_service,
                 request_secrets=request_secrets,
@@ -349,39 +570,22 @@ def run_cli(
             )
             if include_in_history:
                 SHELL_HISTORY.append(cmd)
-            looped_results.append(iter_rsp.stdout)
-            # keep track of last rsp codes we got
-            # TODO: revisit how we aggregate these
-            rsp = iter_rsp
-        aggregate_stdout = "\n".join([iter_stdout for iter_stdout in looped_results])
-        rsp = platform.ShellServiceResponse(
-            cmd=rsp.cmd,
-            parsed_cmd=rsp.parsed_cmd,
-            stdout=aggregate_stdout,
-            stderr=rsp.stderr,
-            returncode=rsp.returncode,
-            status=rsp.status,
-            body=rsp.body,
-            errors=rsp.errors,
-        )
-    else:
-        rsp = execute_command(
-            cmd=cmd,
-            service=target_service,
-            request_secrets=request_secrets,
-            env=env,
-            timeout_seconds=timeout_seconds,
-        )
-        if include_in_history:
-            SHELL_HISTORY.append(cmd)
-    if debug:
-        logger.info(f"shell stdout: {rsp.stdout}")
-        logger.info(f"shell stderr: {rsp.stderr}")
-        logger.info(f"shell status: {rsp.status}")
-        logger.info(f"shell returncode: {rsp.returncode}")
-        logger.info(f"shell rsp: {rsp}")
-    return rsp
+        
+        if debug:
+            logger.info(f"shell stdout: {rsp.stdout}")
+            logger.info(f"shell stderr: {rsp.stderr}")
+            logger.info(f"shell status: {rsp.status}")
+            logger.info(f"shell returncode: {rsp.returncode}")
+            logger.info(f"shell rsp: {rsp}")
 
+        # Raise an exception if the command failed
+        if rsp.returncode != 0:
+            raise RuntimeError(f"Command execution failed with return code {rsp.returncode}: {rsp.stderr}")
+
+        return rsp
+    except Exception as e:
+        logger.error(f"Error running CLI command: {str(e)}")
+        raise
 
 def string_to_datetime(duration_str: str) -> datetime:
     """
