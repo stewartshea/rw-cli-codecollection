@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation       This codebundle runs a series of tasks to identify potential helm release issues. Uses the Helm CLI. Requires secret read. 
+Documentation       This codebundle runs a series of tasks to identify potential helm release issues. Uses the Helm CLI. Requires secret read.
 Metadata            Author    stewartshea
 Metadata            Display Name    Kubernetes Helm Release Health
 Metadata            Supports    GKE,AKS,EKS,Helm,Kubernetes
@@ -12,10 +12,11 @@ Library             OperatingSystem
 
 Suite Setup         Suite Initialization
 
+
 *** Tasks ***
 Get all Helm release `${HELMRELEASE}` details in Namespace `${NAMESPACE}` and Add to Report
-    [Documentation]    Get Helm valies, manifests, and metadata and add to Report.    
-    [Tags]        Helmrelease     Available    List    ${NAMESPACE}    ${HELMRELEASE}
+    [Documentation]    Get Helm valies, manifests, and metadata and add to Report.
+    [Tags]    helmrelease    available    list    ${namespace}    ${helmrelease}
     ${helmrelease_details}=    RW.CLI.Run Cli
     ...    cmd=helm get all ${HELMRELEASE} -n ${NAMESPACE} --kube-context ${CONTEXT}
     ...    env=${env}
@@ -27,6 +28,7 @@ Get all Helm release `${HELMRELEASE}` details in Namespace `${NAMESPACE}` and Ad
     # ...    env=${env}
     # ...    secret_file__kubeconfig=${KUBECONFIG}
     # ...    show_in_rwl_cheatsheet=true
+
 
 *** Keywords ***
 Suite Initialization
@@ -42,15 +44,16 @@ Suite Initialization
     ...    enum=[kubectl,oc]
     ...    example=kubectl
     ...    default=kubectl
-    ${NAMESPACE}=    RW.Core.Import User Variable    NAMESPACE
+    ${NAMESPACE}=    RW.Core.Import User Variable
+    ...    NAMESPACE
     ...    type=string
-    ...    description=The name of the Kubernetes namespace to scope actions and searching to. Accepts a single namespace in the format `-n namespace-name` or `--all-namespaces`. 
+    ...    description=The name of the Kubernetes namespace to scope actions and searching to. Accepts a single namespace in the format `-n namespace-name` or `--all-namespaces`.
     ...    pattern=\w*
     ...    example=-n my-namespace
     ...    default=--all-namespaces
     ${HELMRELEASE}=    RW.Core.Import User Variable    HELMRELEASE
     ...    type=string
-    ...    description=The name of the Helm release to debug. 
+    ...    description=The name of the Helm release to debug.
     ...    pattern=\w*
     ...    example=my-release
     ${CONTEXT}=    RW.Core.Import User Variable    CONTEXT
