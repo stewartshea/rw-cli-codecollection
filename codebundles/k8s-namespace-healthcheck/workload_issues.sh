@@ -28,6 +28,10 @@ if [[ $messages =~ "ContainersNotReady" && $owner_kind == "Deployment" ]]; then
     add_issue "2" "$owner_kind \`$owner_name\` has unready containers" "$messages" "Inspect Deployment Replicas for \`$owner_name\`"
 fi
 
+if [[ $messages =~ "Container runtime did not kill the pod within specified grace period" ]]; then
+    add_issue "3" "$owner_kind \`$owner_name\` timed out during reschedule attempt." "$messages" "Identify High Utilization Nodes for Cluster \`${CONTEXT}\`"
+fi
+
 if [[ $messages =~ "Misconfiguration" && $owner_kind == "Deployment" ]]; then
     add_issue "2" "$owner_kind \`$owner_name\` has a misconfiguration" "$messages" "Check Deployment Log For Issues for \`$owner_name\`\nGet Deployment Workload Details For \`$owner_name\` and Add to Report"
 fi
@@ -65,11 +69,15 @@ if [[ $messages =~ "is forbidden: [minimum cpu usage per Container" || $messages
 fi
 
 if [[ $messages =~ "No preemption victims found for incoming pod" || $messages =~ "Insufficient cpu" || $messages =~ "The node was low on resource" ]]; then
-    add_issue "2" "$owner_kind \`$owner_name\` cannot be scheduled - not enough cluster resources." "$messages" "Not enough node resources available to schedule pods. Escalate this issue to your cluster owner.\nIncrease Node Count in Cluster\nCheck for Quota Errors\nIdentify High Utilization Nodes for Cluster \`${CONTEXT}\`"
+    add_issue "2" "$owner_kind \`$owner_name\` cannot be scheduled - not enough cluster resources." "$messages" "Not enough node resources available to schedule pods. Escalate this issue to your cluster owner.\nIncrease Node Count for Cluster \`${CONTEXT}\` \nCheck for Quota Errors\nIdentify High Utilization Nodes for Cluster \`${CONTEXT}\`"
 fi
 
 if [[ $messages =~ "max node group size reached" ]]; then
     add_issue "2" "$owner_kind \`$owner_name\` cannot be scheduled - cannot increase cluster size." "$messages" "Not enough node resources available to schedule pods. Escalate this issue to your cluster owner.\nIncrease Max Node Group Size in Cluster\nIdentify High Utilization Nodes for Cluster \`${CONTEXT}\`"
+fi
+
+if [[ $messages =~ "Health check failed after" && $owner_kind == "Kustomization" ]]; then
+    add_issue "3" "$owner_kind \`$owner_name\` health check failed." "$messages" "Get details for unready Kustomizations in Namespace \`${NAMESPACE}\`"
 fi
 
 if [[ $messages =~ "Health check failed after" ]]; then

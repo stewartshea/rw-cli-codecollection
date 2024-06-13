@@ -23,7 +23,7 @@ Inspect Warning Events in Namespace `${NAMESPACE}`
     [Documentation]    Queries all warning events in a given namespace within the user specified age,
     ...    fetches the list of involved pod names, groups the events, collects event message details
     ...    and searches for a useful next step based on these details.
-    [Tags]    namespace    trace    error    pods    events    logs    grep    ${NAMESPACE}
+    [Tags]    namespace    trace    error    pods    events    logs    grep    ${namespace}
     ${warning_events_by_object}=    RW.CLI.Run Cli
     ...    cmd=${KUBERNETES_DISTRIBUTION_BINARY} get events --field-selector type=Warning --context ${CONTEXT} -n ${NAMESPACE} -o json > $HOME/warning_events.json && cat $HOME/warning_events.json | jq -r '[.items[] | {namespace: .involvedObject.namespace, kind: .involvedObject.kind, baseName: ((if .involvedObject.kind == "Pod" then (.involvedObject.name | split("-")[:-1] | join("-")) else .involvedObject.name end) // ""), count: .count, firstTimestamp: .firstTimestamp, lastTimestamp: .lastTimestamp, reason: .reason, message: .message}] | group_by(.namespace, .kind, .baseName) | map({object: (.[0].namespace + "/" + .[0].kind + "/" + .[0].baseName), total_events: (reduce .[] as $event (0; . + $event.count)), summary_messages: (map(.message) | unique | join("; ")), oldest_timestamp: (map(.firstTimestamp) | sort | first), most_recent_timestamp: (map(.lastTimestamp) | sort | last)}) | map(select((now - ((.most_recent_timestamp | fromdateiso8601)))/60 <= ${EVENT_AGE} ))'
     ...    env=${env}
@@ -59,7 +59,7 @@ Inspect Warning Events in Namespace `${NAMESPACE}`
                 ${owner_kind}=    Set Variable    "Unknown"
                 ${owner_name}=    Set Variable    "Unknown"
             END
-            # Drop anything that is unknown / unknown 
+            # Drop anything that is unknown / unknown
             # Usually this resource no longer exists.
             # FIXME: Consider a deeper insight into an object that no longer exists but the event still does
             IF    $owner_name != "Unknown"
@@ -524,10 +524,10 @@ Suite Initialization
     ...    default=/home/runwhen
     ${EVENT_AGE}=    RW.Core.Import User Variable    EVENT_AGE
     ...    type=string
-    ...    description=The age in minutes in which Warning events are evaluated. 
+    ...    description=The age in minutes in which Warning events are evaluated.
     ...    pattern=\w*
     ...    example=30
-    ...    default=30
+    ...    default=10
     Set Suite Variable    ${kubeconfig}    ${kubeconfig}
     Set Suite Variable    ${CONTEXT}    ${CONTEXT}
     Set Suite Variable    ${KUBERNETES_DISTRIBUTION_BINARY}    ${KUBERNETES_DISTRIBUTION_BINARY}
