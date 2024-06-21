@@ -14,7 +14,7 @@ spec:
   - name: OBJECT_NAME
     value: {{match_resource.resource.metadata.name}}
   owners:
-  - {{ match_resource.owner | default workspace.owner_email}}
+  - {{ owner }}
   statement: Overall health for {{namespace.name}} should be 1, 99% of the time. 
   additionalContext:  
     namespace: "{{match_resource.resource.metadata.name}}"
