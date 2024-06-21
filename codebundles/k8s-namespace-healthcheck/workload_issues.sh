@@ -5,22 +5,84 @@
 # -----------------------------------------------------------------------------
 # Author: @stewartshea
 # Description: This script takes in event message strings captured from a 
-# Kubernetes based system and provides more concrete issue details in json format. This is a migratio naway from workload_next_steps.sh in order to support dynamic severity generation and more robust next step details. 
+# Kubernetes based system and provides more concrete issue details in json format. This is a migration away from workload_next_steps.sh in order to support dynamic severity generation and more robust next step details. 
 # -----------------------------------------------------------------------------
 # Input: List of event messages, related owner kind, and related owner name
 messages="$1"
 owner_kind="$2"  
 owner_name="$3"
 
-issue_details_array=()
+declare -A issue_titles
+declare -A issue_details
+declare -A issue_next_steps
+
+# Function to calculate the Levenshtein distance between two strings
+levenshtein() {
+    if [ "$1" == "$2" ]; then
+        echo 0
+        return
+    fi
+
+    local str1len=$((${#1} + 1))
+    local str2len=$((${#2} + 1))
+
+    for ((i = 0; i < str1len; i++)); do
+        costs[$i]=i
+    done
+
+    for ((j = 1; j < str2len; j++)); do
+        costs[0]=$j
+        local nw=$((j - 1))
+        for ((i = 1; i < str1len; i++)); do
+            local cj=$((costs[$i] + 1))
+            local cs=$((costs[$i - 1] + 1))
+            if [ "${1:i-1:1}" == "${2:j-1:1}" ]; then
+                local cost=$nw
+            else
+                local cost=$((nw + 1))
+            fi
+            costs[$i]=$(( $(min $cj $cs $cost) ))
+            nw=${costs[$i]}
+        done
+    done
+
+    echo ${costs[str1len-1]}
+}
+
+min() {
+    local min=$1
+    for n in "$@"; do
+        ((n < min)) && min=$n
+    done
+    echo $min
+}
+
+similarity_score() {
+    local len1=${#1}
+    local len2=${#2}
+    local max_len=$((len1 > len2 ? len1 : len2))
+    local dist=$(levenshtein "$1" "$2")
+    local similarity=$(echo "scale=2; 1 - $dist / $max_len" | bc)
+    echo $similarity
+}
 
 add_issue() {
     local severity=$1
     local title=$2
     local details=$3
     local next_steps=$4
-    issue_details="{\"severity\":\"$severity\",\"title\":\"$title\",\"details\":\"$details\",\"next_steps\":\"$next_steps\"}"
-    issue_details_array+=("$issue_details")
+
+    # Check for similar existing details
+    for key in "${!issue_details[@]}"; do
+        local similarity=$(similarity_score "$key" "$details")
+        if (( $(echo "$similarity > 0.8" | bc -l) )); then
+            return
+        fi
+    done
+
+    issue_titles["$title"]=$severity
+    issue_details["$details"]=$details
+    issue_next_steps["$title"]=$next_steps
 }
 
 # Check conditions and add issues to the array
@@ -100,7 +162,7 @@ if [[ $messages =~ "OCI runtime exec failed: exec failed: unable to start contai
     add_issue "2" "Possible node or container runtime issue" "$messages" "Escalate container runtime issue to service owner if they continue."
 fi
 
-if [[ $messages =~ "Created container" || $messages =~ "no changes since last reconcilation" || $messages =~ "Reconciliation finished" || $messages =~ "Pulling image" || $messages =~ "Successfully pulled" || $messages =~ "Started container" || $messages =~ "Successfully assigned" || $messages =~ "already present on machine" ]]; then
+if [[ $messages =~ "Created container" || $messages =~ "no changes since last reconciliation" || $messages =~ "Reconciliation finished" || $messages =~ "Pulling image" || $messages =~ "Successfully pulled" || $messages =~ "Started container" || $messages =~ "Successfully assigned" || $messages =~ "already present on machine" ]]; then
     # Don't generate any issue data, these are normal strings
     echo "[]" | jq .
     exit 0
@@ -110,9 +172,13 @@ fi
 ## Removed for now - they were getting wildly off-base
 ### End of auto-generated message strings
 
-if [ ${#issue_details_array[@]} -gt 0 ]; then
-    issues_json=$(printf "%s," "${issue_details_array[@]}")
-    issues_json="[${issues_json%,}]" # Remove the last comma and wrap in square brackets
+if [ ${#issue_titles[@]} -gt 0 ]; then
+    issues_json="["
+    for title in "${!issue_titles[@]}"; do
+        details="${issue_details[${issue_details[$title]}]}"
+        issues_json+="{\"severity\":\"${issue_titles[$title]}\",\"title\":\"$title\",\"details\":\"${issue_details[$details]}\",\"next_steps\":\"${issue_next_steps[$title]}\"},"
+    done
+    issues_json="${issues_json%,}]" # Remove the last comma and wrap in square brackets
     echo "$issues_json" | jq .
 else
     echo "[{\"severity\":\"4\",\"title\":\"$owner_kind \`$owner_name\` has issues that require further investigation.\",\"details\":\"$messages\",\"next_steps\":\"Escalate issues for $owner_kind \`$owner_name\` to service owner \"}]" | jq .

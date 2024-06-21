@@ -9,6 +9,7 @@ Library             RW.Core
 Library             RW.CLI
 Library             RW.K8sHelper
 Library             RW.NextSteps
+Library             RW.OutputHelper
 Library             RW.platform
 Library             OperatingSystem
 Library             DateTime
@@ -181,7 +182,7 @@ Inspect Pending Pods In Namespace `${NAMESPACE}`
         END
     END
     ${history}=    RW.CLI.Pop Shell History
-    RW.Core.Add Pre To Report    Summary of pendind pods in namespace: ${NAMESPACE}
+    RW.Core.Add Pre To Report    Summary of pending pods in namespace: ${NAMESPACE}
     RW.Core.Add Pre To Report    ${pending_pods.stdout}
     RW.Core.Add Pre To Report    Commands Used:\n${history}
 
@@ -194,9 +195,11 @@ Inspect Failed Pods In Namespace `${NAMESPACE}`
     ...    secret_file__kubeconfig=${kubeconfig}
     ...    show_in_rwl_cheatsheet=true
     ...    render_in_commandlist=true
-    ${unready_pods_list}=    Evaluate    json.loads(r'''${unreadypods_details.stdout}''')    json
-    IF    len($unready_pods_list) > 0
-        FOR    ${item}    IN    @{unready_pods_list}
+    ${unready_pods_list}=    Evaluate    json.load(r'''${unreadypods_details.stdout}''')    json
+    ${deduped_list}=    RW.OutputHelper.Deduplicate JSON List    ${unready_pods_list}
+    Log    ${deduped_list}
+    IF    len($deduped_list) > 0
+        FOR    ${item}    IN    @{deduped_list}
             ${item_owner}=    RW.CLI.Run Bash File
             ...    bash_file=find_resource_owners.sh
             ...    cmd_override=./find_resource_owners.sh Pod ${item["pod_name"]} ${NAMESPACE} ${CONTEXT}
