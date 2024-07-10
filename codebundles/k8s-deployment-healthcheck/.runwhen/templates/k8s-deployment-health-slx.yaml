@@ -21,4 +21,4 @@ spec:
     labelMap: "{{match_resource.resource.metadata.labels}}"
     cluster: "{{ cluster.name }}"
     context: "{{ cluster.context }}"
-    test: "{{match_resource.resource.metadata.annotations.'meta.helm.sh//release-name'}}"
+    test: "{{match_resource.resource.metadata.annotations}}"
