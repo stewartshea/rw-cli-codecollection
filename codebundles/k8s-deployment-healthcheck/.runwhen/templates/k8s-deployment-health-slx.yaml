@@ -21,4 +21,4 @@ spec:
     labelMap: "{{match_resource.resource.metadata.labels}}"
     cluster: "{{ cluster.name }}"
     context: "{{ cluster.context }}"
-    test: "{{ match_resource.resource.metadata.annotations.get('deployment.kubernetes.io/revision') }}"
+    test: "{{ match_resource.resource.metadata.annotations.get('deployment.kubernetes.io/evision') }}"
