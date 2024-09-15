@@ -14,7 +14,9 @@ spec:
     - tasks:
         slx: {{slx_name.split('--')[1]}}
         persona: eager-edgar
-        titles: ['*']
+        titles:
+          - '*'
+        sessionTTL: 20m
       - email:
           to:
             - '@owners'
