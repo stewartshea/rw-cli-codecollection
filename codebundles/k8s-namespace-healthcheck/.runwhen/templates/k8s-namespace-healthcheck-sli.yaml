@@ -46,3 +46,16 @@ spec:
   secretsProvided:
     - name: kubeconfig
       workspaceKey: {{custom.kubeconfig_secret_name}}
+  alerts:
+    warning:
+      operator: <
+      threshold: '1'
+      for: '5m'
+    ticket:
+      operator: <
+      threshold: '1'
+      for: '10'
+    page:
+      operator: '=='
+      threshold: '0'
+      for: ''
