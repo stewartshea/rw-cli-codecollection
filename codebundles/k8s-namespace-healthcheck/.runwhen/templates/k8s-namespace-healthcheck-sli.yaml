@@ -54,7 +54,7 @@ spec:
     ticket:
       operator: <
       threshold: '1'
-      for: '10'
+      for: '10m'
     page:
       operator: '=='
       threshold: '0'
