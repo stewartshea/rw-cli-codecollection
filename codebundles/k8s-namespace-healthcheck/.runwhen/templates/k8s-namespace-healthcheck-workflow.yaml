@@ -17,9 +17,9 @@ spec:
         titles:
           - '*'
         sessionTTL: 20m
-      - email:
-          to:
-            - '@owners'
+    - email:
+        to:
+          - '@owners'
     match:
       activityVerbs:
       - SLI_ALERTS_STARTED
