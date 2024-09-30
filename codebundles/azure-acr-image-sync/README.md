@@ -1,5 +1,4 @@
 # Azure ACR Image Sync
-
 ## Runbook: Azure ACR Image Sync
 
 **Purpose**:  
