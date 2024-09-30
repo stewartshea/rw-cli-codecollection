@@ -76,22 +76,14 @@ Suite Initialization
     # Escape double quotes for IMAGE_MAPPINGS to properly set it in the environment variable
     ${escaped_image_mappings}=    Replace String Using Regexp    ${IMAGE_MAPPINGS}    "    \\\"
 
-    ${HOME}=    RW.Core.Import User Variable
-    ...    HOME
-    ...    type=string
-    ...    description=The home dir of the runwhen user. 
-    ...    pattern=\w*
-    ...    example=/home/runwhen
-    ...    default=/home/runwhen
 
     Set Suite Variable    ${ACR_REGISTRY}    ${ACR_REGISTRY}
     Set Suite Variable    ${IMAGE_MAPPINGS}    ${IMAGE_MAPPINGS}
     Set Suite Variable    ${USE_DATE_TAG_PATTERN}    ${USE_DATE_TAG_PATTERN}
     Set Suite Variable    ${TAG_CONFLICT_HANDLING}    ${TAG_CONFLICT_HANDLING}
-    Set Suite Variable    ${HOME}    ${HOME}
     Set Suite Variable
     ...    ${env}
-    ...    {"ACR_REGISTRY":"${ACR_REGISTRY}", "IMAGE_MAPPINGS":"${escaped_image_mappings}", "USE_DATE_TAG_PATTERN":"${USE_DATE_TAG_PATTERN}", "TAG_CONFLICT_HANDLING":"${TAG_CONFLICT_HANDLING}", "HOME":"${HOME}"}
+    ...    {"ACR_REGISTRY":"${ACR_REGISTRY}", "IMAGE_MAPPINGS":"${escaped_image_mappings}", "USE_DATE_TAG_PATTERN":"${USE_DATE_TAG_PATTERN}", "TAG_CONFLICT_HANDLING":"${TAG_CONFLICT_HANDLING}"}
 
 Import Docker Secrets
     ${DOCKER_USERNAME}=    RW.Core.Import Secret
