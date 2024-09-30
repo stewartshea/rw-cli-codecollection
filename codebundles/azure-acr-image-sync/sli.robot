@@ -1,22 +1,40 @@
 *** Settings ***
-Metadata          Author    stewartshea
-Documentation     This CodeBundle counts the number of container images (from a configured list) outdated. It compares upstream images with those in the registry and counts the number that are outdated. 
-Metadata          Supports     Azure,ACR
-Metadata          Display Name     Outdated Azure Container Registry Image Count
-Suite Setup       Suite Initialization
-Library           BuiltIn
-Library           RW.Core
-Library           RW.platform
-Library           String
-Library           OperatingSystem
-Library           RW.CLI
+Documentation       This CodeBundle counts the number of container images (from a configured list) outdated. It compares upstream images with those in the registry and counts the number that are outdated.
+Metadata            Author    stewartshea
+Metadata            Supports    Azure,ACR
+Metadata            Display Name    Outdated Azure Container Registry Image Count
+
+Library             BuiltIn
+Library             RW.Core
+Library             RW.platform
+Library             String
+Library             OperatingSystem
+Library             RW.CLI
+
+Suite Setup         Suite Initialization
+
+
+*** Tasks ***
+Count Outdated Images in Azure Container Registry `${ACR_REGISTRY}`
+    [Documentation]    Counts the number of images that need updating in ACR from the upstream source.
+    [Tags]    azure    acr    registry    runwhen
+    ${az_acr_image_check}=    RW.CLI.Run Bash File
+    ...    bash_file=check_for_image_updates.sh
+    ...    env=${env}
+    ...    secret__DOCKER_USERNAME=${DOCKER_USERNAME}
+    ...    secret__DOCKER_TOKEN=${DOCKER_TOKEN}
+    ...    include_in_history=False
+    ...    timeout_seconds=1200
+    ${total_outdated_images}=    RW.CLI.Run CLI
+    ...    cmd=echo "${az_acr_image_check.stdout}" | grep "Total images requiring an update" | awk '{print $NF}'
+    RW.Core.Push Metric    ${total_outdated_images.stdout}
 
 
 *** Keywords ***
 Suite Initialization
     ${ACR_REGISTRY}=    RW.Core.Import User Variable    ACR_REGISTRY
     ...    type=string
-    ...    description=The name of the Azure Container Registry to import images into. 
+    ...    description=The name of the Azure Container Registry to import images into.
     ...    pattern=\w*
     ...    example=myacr.azurecr.io
     ...    default=myacr.azurecr.io
@@ -38,11 +56,11 @@ Suite Initialization
     ...    USE_DOCKER_AUTH
     ...    type=string
     ...    enum=[true,false]
-    ...    description=Import the docker secret for authentication. Useful in bypassing rate limits. 
+    ...    description=Import the docker secret for authentication. Useful in bypassing rate limits.
     ...    pattern=\w*
     ...    default=false
     Set Suite Variable    ${USE_DOCKER_AUTH}    ${USE_DOCKER_AUTH}
-    Run Keyword If    "${USE_DOCKER_AUTH}" == "true"    Import Docker Secrets
+    IF    "${USE_DOCKER_AUTH}" == "true"    Import Docker Secrets
 
     ${azure_credentials}=    RW.Core.Import Secret
     ...    azure_credentials
@@ -56,7 +74,7 @@ Suite Initialization
     ${HOME}=    RW.Core.Import User Variable
     ...    HOME
     ...    type=string
-    ...    description=The home dir of the runwhen user. 
+    ...    description=The home dir of the runwhen user.
     ...    pattern=\w*
     ...    example=/home/runwhen
     ...    default=/home/runwhen
@@ -79,18 +97,3 @@ Import Docker Secrets
     ...    type=string
     ...    description=Docker token to use if rate limited by Docker.
     ...    pattern=\w*
-
-*** Tasks ***
-Count Outdated Images in Azure Container Registry `${ACR_REGISTRY}`
-    [Documentation]    Counts the number of images that need updating in ACR from the upstream source. 
-    [Tags]    azure    acr    registry    runwhen
-    ${az_acr_image_check}=    RW.CLI.Run Bash File
-    ...    bash_file=check_for_image_updates.sh
-    ...    env=${env}
-    ...    secret__DOCKER_USERNAME=${DOCKER_USERNAME}
-    ...    secret__DOCKER_TOKEN=${DOCKER_TOKEN}
-    ...    include_in_history=False
-    ...    timeout_seconds=1200
-    ${total_outdated_images}=    RW.CLI.Run CLI
-    ...    cmd=echo "${az_acr_image_check.stdout}" | grep "Total images requiring an update" | awk '{print $NF}'
-    RW.Core.Push Metric    ${total_outdated_images.stdout}
