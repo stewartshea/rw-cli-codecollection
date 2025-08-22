@@ -13,6 +13,7 @@ Library           OperatingSystem
 Library           String
 Library           Collections
 
+
 *** Keywords ***
 Suite Initialization
     ${kubeconfig}=    RW.Core.Import Secret    kubeconfig
