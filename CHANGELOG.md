@@ -52,4 +52,3 @@ Version lock prior to bash/cli library adjustments.
 
 ## 0.0.2 2023-06-06
 
-
