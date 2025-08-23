@@ -16,4 +16,3 @@ This repository is **one of many** CodeCollections that is used with the [RunWhe
 
 Please see the **[contributing](CONTRIBUTING.md)** and **[code of conduct](CODE_OF_CONDUCT.md)** for details on adding your contributions to this project.
 
-
