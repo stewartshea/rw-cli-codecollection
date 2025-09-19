@@ -1,0 +1,25 @@
+# azure-network-security-integrity Cursor Rules
+
+## Codebundle Context
+This is an auto-generated codebundle for azure network-security integrity.
+
+## Platform-Specific Guidelines
+
+### AZURE Best Practices
+- Use appropriate CLI commands and error handling
+- Follow established patterns from similar codebundles
+- Include proper authentication and subscription management
+- Generate structured JSON output for issue reporting
+
+## Code Standards
+- Bash scripts should include error handling and validation
+- Robot Framework tasks should follow naming conventions
+- All scripts should output to $OUTPUT_DIR/results.json
+- Include meaningful logging and progress indicators
+
+## Issue Reporting Format
+Issues should be reported in JSON format with:
+- title: Clear, descriptive issue title
+- details: Specific details about the problem
+- severity: 1-4 scale (1=Critical, 4=Low)
+- next_steps: Actionable remediation steps
