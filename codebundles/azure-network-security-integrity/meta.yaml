@@ -1,0 +1,91 @@
+commands:
+- command: bash '_compare_current_nsg_rules_with_repo_managed_desired_state.sh'
+  doc_links: "\n    - [Azure CLI documentation](https://docs.microsoft.com/en-us/cli/azure/){:target=\"\
+    _blank\"}\n    - [Azure Resource Manager](https://docs.microsoft.com/en-us/azure/azure-resource-manager/){:target=\"\
+    _blank\"}\n    - [Azure Security Best Practices](https://docs.microsoft.com/en-us/azure/security/){:target=\"\
+    _blank\"}"
+  explanation: This script  compare current nsg rules with repo managed desired state
+    for azure resources.
+  name: _compare_current_nsg_rules_with_repo_managed_desired_state_for_network_security
+  when_is_it_useful: '1. When troubleshooting azure resource issues and need to  compare
+    current nsg rules with repo managed desired state
+
+    2. During regular health checks and monitoring of azure infrastructure
+
+    3. As part of compliance auditing and security assessments
+
+    4. When investigating performance or connectivity problems
+
+    5. For automated monitoring and alerting in CI/CD pipelines'
+- command: bash 'flag_discrepancies_that_indicate_out_of_band_changes.sh'
+  doc_links: "\n    - [Azure CLI documentation](https://docs.microsoft.com/en-us/cli/azure/){:target=\"\
+    _blank\"}\n    - [Azure Resource Manager](https://docs.microsoft.com/en-us/azure/azure-resource-manager/){:target=\"\
+    _blank\"}\n    - [Azure Security Best Practices](https://docs.microsoft.com/en-us/azure/security/){:target=\"\
+    _blank\"}"
+  explanation: This script flag discrepancies that indicate out of band changes for
+    azure resources.
+  name: flag_discrepancies_that_indicate_out_of_band_changes_for_network_security
+  when_is_it_useful: '1. When troubleshooting azure resource issues and need to flag
+    discrepancies that indicate out of band changes
+
+    2. During regular health checks and monitoring of azure infrastructure
+
+    3. As part of compliance auditing and security assessments
+
+    4. When investigating performance or connectivity problems
+
+    5. For automated monitoring and alerting in CI/CD pipelines'
+- command: bash '_confirm_traffic_flow_from_each_subnet_by_testing_nsg_and_vnet_rule_enforcement.sh'
+  doc_links: "\n    - [Azure CLI documentation](https://docs.microsoft.com/en-us/cli/azure/){:target=\"\
+    _blank\"}\n    - [Azure Resource Manager](https://docs.microsoft.com/en-us/azure/azure-resource-manager/){:target=\"\
+    _blank\"}\n    - [Azure Security Best Practices](https://docs.microsoft.com/en-us/azure/security/){:target=\"\
+    _blank\"}"
+  explanation: This script  confirm traffic flow from each subnet by testing nsg and
+    vnet rule enforcement for azure resources.
+  name: _confirm_traffic_flow_from_each_subnet_by_testing_nsg_and_vnet_rule_enforcement_for_network_security
+  when_is_it_useful: '1. When troubleshooting azure resource issues and need to  confirm
+    traffic flow from each subnet by testing nsg and vnet rule enforcement
+
+    2. During regular health checks and monitoring of azure infrastructure
+
+    3. As part of compliance auditing and security assessments
+
+    4. When investigating performance or connectivity problems
+
+    5. For automated monitoring and alerting in CI/CD pipelines'
+- command: bash '_query_activity_logs_to_identify_whether_firewallnsg_changes_were_pushed_through_cicd_pipeline_vs_manual_actors.sh'
+  doc_links: "\n    - [Azure CLI documentation](https://docs.microsoft.com/en-us/cli/azure/){:target=\"\
+    _blank\"}\n    - [Azure Resource Manager](https://docs.microsoft.com/en-us/azure/azure-resource-manager/){:target=\"\
+    _blank\"}\n    - [Azure Security Best Practices](https://docs.microsoft.com/en-us/azure/security/){:target=\"\
+    _blank\"}"
+  explanation: This script  query activity logs to identify whether firewallnsg changes
+    were pushed through cicd pipeline vs manual actors for azure resources.
+  name: _query_activity_logs_to_identify_whether_firewallnsg_changes_were_pushed_through_cicd_pipeline_vs_manual_actors_for_network_security
+  when_is_it_useful: '1. When troubleshooting azure resource issues and need to  query
+    activity logs to identify whether firewallnsg changes were pushed through cicd
+    pipeline vs manual actors
+
+    2. During regular health checks and monitoring of azure infrastructure
+
+    3. As part of compliance auditing and security assessments
+
+    4. When investigating performance or connectivity problems
+
+    5. For automated monitoring and alerting in CI/CD pipelines'
+- command: bash 'detect_manual_nsg_changes.sh'
+  doc_links: "\n    - [Azure CLI documentation](https://docs.microsoft.com/en-us/cli/azure/){:target=\"\
+    _blank\"}\n    - [Azure Resource Manager](https://docs.microsoft.com/en-us/azure/azure-resource-manager/){:target=\"\
+    _blank\"}\n    - [Azure Security Best Practices](https://docs.microsoft.com/en-us/azure/security/){:target=\"\
+    _blank\"}"
+  explanation: This script detect manual nsg changes for azure resources.
+  name: detect_manual_nsg_changes_for_network_security
+  when_is_it_useful: '1. When troubleshooting azure resource issues and need to detect
+    manual nsg changes
+
+    2. During regular health checks and monitoring of azure infrastructure
+
+    3. As part of compliance auditing and security assessments
+
+    4. When investigating performance or connectivity problems
+
+    5. For automated monitoring and alerting in CI/CD pipelines'

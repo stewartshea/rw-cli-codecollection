@@ -1,0 +1,117 @@
+# Azure Network Security Integrity Codebundle - Cursor Rules
+
+## Overview
+This codebundle provides integrity monitoring for azure network security, including automated checks, validation, and reporting.
+
+## File Structure and Patterns
+
+### Robot Framework Files (.robot)
+- **runbook.robot**: Main execution file with tasks and keywords for troubleshooting
+- **sli.robot**: Service Level Indicator definitions for monitoring
+- Follow Robot Framework syntax and conventions
+- Use consistent task naming: `Check/Get/Fetch [Entity] [Action] for [Resource] In [Scope]`
+- Always include proper documentation and tags for each task
+
+### Bash Scripts (.sh)
+- All scripts must be executable (`chmod +x`)
+- Use consistent naming: `[entity]_[action].sh`
+- Include comprehensive error handling and validation
+- Provide clear stdout output with structured formatting
+- Generate both human-readable and machine-readable outputs
+- Output JSON results to `$OUTPUT_DIR/results.json`
+
+## Issue Reporting Standards
+
+### Issue Severity Levels
+- **Severity 1**: Critical issues affecting service availability
+- **Severity 2**: High-impact issues requiring immediate attention
+- **Severity 3**: Medium-impact issues that should be addressed (warnings, recommendations)
+- **Severity 4**: Low-impact informational issues (configuration recommendations)
+
+### Issue Titles
+- **MUST** include entity name and resource information
+- **MUST** include resource group/namespace context
+- **MUST** be clear, concise, and descriptive
+- **Format**: `"[Entity] '[name]' in [Resource] '[resource_name]' has [issue_description]"`
+
+### Issue Details
+- **MUST** include complete context (Resource, Group, Subscription/Cluster)
+- **MUST** include time period information when relevant
+- **MUST** include relevant metrics with clear labels
+- **MUST** include specific detected issues with values
+- **MUST** include actionable next steps for troubleshooting
+- **Format**: Structured sections with clear headers and bullet points
+
+## Configuration Variables
+
+### Required Variables
+- `AZ_RESOURCE_GROUP`: Azure resource group name
+- `AZURE_RESOURCE_SUBSCRIPTION_ID`: Azure subscription ID (optional)
+
+### Optional Threshold Variables
+- `TIME_PERIOD_MINUTES`: Time period for analysis (default: 30)
+- `ERROR_RATE_THRESHOLD`: Error rate threshold % (default: 10)
+- `PERFORMANCE_THRESHOLD`: Performance threshold for alerts
+
+## Script Development Guidelines
+
+### Error Handling
+- Always validate required environment variables at script start
+- Provide meaningful error messages with context
+- Use proper exit codes (0 for success, non-zero for errors)
+- Handle missing or null data gracefully
+
+### Output Generation
+- Generate JSON output to `$OUTPUT_DIR/results.json`
+- Include timestamps in reports
+- Provide both summary and detailed information
+- **JSON Validation**: Always validate JSON output before writing
+- **Error Handling**: Provide fallback JSON if validation fails
+
+### AZURE Integration
+- Use Azure CLI for resource management and queries
+- Follow Azure Resource Manager patterns
+- Include proper subscription and resource group context
+- Use Azure Monitor APIs for metrics collection
+- Generate Azure Portal links for easy navigation
+
+## Testing Requirements
+
+### Script Validation
+- All scripts must pass syntax validation (`bash -n`)
+- Test with mock data to ensure output generation
+- Validate JSON structure and content
+- Test error handling scenarios
+
+### Integration Testing
+- Test with real azure resources when possible
+- Verify issue detection and reporting
+- Test threshold configurations
+- Validate portal/console link generation
+
+## Security Considerations
+
+### Authentication
+- Use service principal/service account authentication
+- Never hardcode credentials in scripts
+- Validate CLI authentication before operations
+- Handle authentication errors gracefully
+
+### Data Handling
+- Sanitize output data for sensitive information
+- Use appropriate permissions for resource access
+- Log operations for audit purposes
+- Handle PII data appropriately
+
+## Performance Guidelines
+
+### Resource Usage
+- Minimize API calls where possible
+- Use appropriate time intervals for metrics
+- Cache results when appropriate
+- Handle large datasets efficiently
+
+### Timeout Handling
+- Set appropriate timeouts for long-running operations
+- Provide progress indicators for lengthy operations
+- Handle partial failures gracefully
