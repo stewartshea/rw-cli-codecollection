@@ -10,6 +10,7 @@ This codebundle monitors AWS account cost trends using the Cost Explorer API and
 - Identify Reserved Instance (RI) and Savings Plans purchase opportunities
 - Provide visibility into spending trends across linked accounts
 
+
 ## Tasks
 
 ### Generate AWS Cost Report By Service
